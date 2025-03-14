@@ -79,7 +79,6 @@ jobs:
           java-version: 21
 
       - name: Execute Kotlin Webhook
-        working-directory: workflow
         env:
           DISCORD_COMMIT_WEBHOOK: ${{ secrets.DISCORD_COMMIT_WEBHOOK }}
           DISCORD_PR_WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK }}
