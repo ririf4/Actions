@@ -54,10 +54,14 @@ fun sendCommitWebhook(webhookUrl: String, repo: String, branch: String) {
 	sendDiscordWebhook(webhookUrl, payload)
 }
 
-fun sendIssueWebhook(webhookUrl: String, repo: String, branch: String) {
-	if (webhookUrl.isEmpty()) return println("Webhook URL is empty. Skipping issue webhook.")
+fun sendIssueWebhook(webhookUrl: String?, repo: String, branch: String) {
+	if (webhookUrl.isNullOrEmpty()) {
+		println("Webhook URL is empty. Skipping issue webhook.")
+		return
+	}
+
 	val issueTitle = System.getenv("GITHUB_ISSUE_TITLE") ?: "Unknown Issue"
-	val issueBody = System.getenv("GITHUB_ISSUE_BODY") ?: "No description"
+	val issueBody = System.getenv("GITHUB_ISSUE_BODY").orEmpty() // nullガード
 	val issueUrl = System.getenv("GITHUB_ISSUE_URL") ?: "Unknown URL"
 	val issueNumber = System.getenv("GITHUB_ISSUE_NUMBER") ?: "Unknown"
 	val issueAuthor = System.getenv("GITHUB_ISSUE_AUTHOR") ?: "Unknown Author"
@@ -77,6 +81,11 @@ fun sendIssueWebhook(webhookUrl: String, repo: String, branch: String) {
 
 	val truncatedBody = if (issueBody.length > 550) issueBody.take(550) + "..." else issueBody
 
+	val imageRegex = Regex("""!\[.*?]\((https://user-images.githubusercontent.com/.*?\.(?:png|jpg|jpeg|gif|webp))\)""")
+	val imageUrls = imageRegex.findAll(issueBody).map { it.groupValues[1] }.toList()
+
+	val firstImageUrl = imageUrls.firstOrNull()
+
 	val embed = Embed(
 		title = "[${repo}:${branch}] $eventType: #$issueNumber $issueTitle",
 		url = issueUrl,
@@ -84,7 +93,8 @@ fun sendIssueWebhook(webhookUrl: String, repo: String, branch: String) {
 		color = embedColor,
 		timestamp = Instant.now().toString(),
 		footer = Footer("GitHub Issues"),
-		author = Author(issueAuthor, authorUrl, authorAvatar)
+		author = Author(issueAuthor, authorUrl, authorAvatar),
+		image = firstImageUrl?.let { Image(it) } // 画像がある場合のみ設定
 	)
 
 	val payload = WebhookPayload(
@@ -176,7 +186,8 @@ data class Embed(
 	val color: Int,
 	val timestamp: String,
 	val footer: Footer,
-	val author: Author
+	val author: Author,
+	val image: Image? = null
 )
 
 data class Footer(
@@ -188,4 +199,8 @@ data class Author(
 	val name: String,
 	val url: String,
 	val icon_url: String? = null
+)
+
+data class Image(
+	val url: String
 )
