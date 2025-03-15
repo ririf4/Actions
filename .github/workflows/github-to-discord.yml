@@ -1,7 +1,7 @@
 name: GitHub to Discord Webhook
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       repo_name:
         description: "Repository name"
@@ -16,51 +16,67 @@ on:
         required: true
         type: string
       commit_sha:
+        description: "Commit SHA"
         required: false
         type: string
       commit_message:
+        description: "Commit message"
         required: false
         type: string
       commit_author:
+        description: "Commit author"
         required: false
         type: string
       pr_title:
+        description: "Pull request title"
         required: false
         type: string
       pr_body:
+        description: "Pull request body"
         required: false
         type: string
       pr_url:
+        description: "Pull request URL"
         required: false
         type: string
       pr_number:
+        description: "Pull request number"
         required: false
         type: string
       pr_author:
+        description: "Pull request author"
         required: false
         type: string
       pr_state:
+        description: "Pull request state"
         required: false
         type: string
       pr_merged:
+        description: "Pull request merged status"
         required: false
         type: boolean
       issue_title:
+        description: "Issue title"
         required: false
         type: string
       issue_body:
+        description: "Issue body"
         required: false
         type: string
       issue_url:
+        description: "Issue URL"
         required: false
         type: string
       issue_number:
+        description: "Issue number"
         required: false
         type: string
       issue_author:
+        description: "Issue author"
         required: false
         type: string
       issue_state:
+        description: "Issue state"
         required: false
         type: string
 
@@ -77,7 +93,7 @@ jobs:
         with:
           distribution: 'microsoft'
           java-version: 21
-          
+
       - name: Grant execute permissions to gradlew
         run: chmod +x gradlew
 
