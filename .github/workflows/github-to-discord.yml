@@ -20,6 +20,10 @@ jobs:
           distribution: 'microsoft'
           java-version: 21
 
+      - name: Grant Execute Permission to gradlew
+        run: chmod +x gradlew
+
+
       - name: Parse JSON Payload
         id: json
         run: |
