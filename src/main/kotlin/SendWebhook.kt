@@ -6,7 +6,7 @@ import java.time.Instant
 
 fun main(args: Array<String>) {
 	if (args.isEmpty()) {
-		println("Usage: ./gradlew run --args=\"-commit\" or \"-issues\"")
+		println("Usage: ./gradlew run --args=\"commit\" or \"issues\" or \"pull-request\"")
 		return
 	}
 
@@ -18,9 +18,9 @@ fun main(args: Array<String>) {
 	val branch = System.getenv("GITHUB_REF")?.split("/")?.last() ?: "unknown-branch"
 
 	when (args[0]) {
-		"-commit" -> sendCommitWebhook(commitWebhook, repo, branch)
-		"-issues" -> sendIssueWebhook(issueWebhook, repo, branch)
-		"-pull-request" -> sendPullRequestWebhook(prWebhook, repo, branch)
+		"commit" -> sendCommitWebhook(commitWebhook, repo, branch)
+		"issues" -> sendIssueWebhook(issueWebhook, repo, branch)
+		"pull-request" -> sendPullRequestWebhook(prWebhook, repo, branch)
 		else -> println("Unknown argument: ${args[0]}. Use -commit, -issues, or -pull-request")
 	}
 }
@@ -94,7 +94,7 @@ fun sendIssueWebhook(webhookUrl: String?, repo: String, branch: String) {
 		timestamp = Instant.now().toString(),
 		footer = Footer("GitHub Issues"),
 		author = Author(issueAuthor, authorUrl, authorAvatar),
-		image = firstImageUrl?.let { Image(it) } // 画像がある場合のみ設定
+		image = firstImageUrl?.let { Image(it) }
 	)
 
 	val payload = WebhookPayload(
