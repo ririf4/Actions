@@ -1,83 +1,9 @@
-name: GitHub to Discord Webhook
-
 on:
   workflow_dispatch:
     inputs:
-      repo_name:
-        description: "Repository name"
+      payload:
+        description: "All parameters in JSON format"
         required: true
-        type: string
-      branch_name:
-        description: "Branch name"
-        required: true
-        type: string
-      event_type:
-        description: "Event type (commit, pull-request, issues)"
-        required: true
-        type: string
-      commit_sha:
-        description: "Commit SHA"
-        required: false
-        type: string
-      commit_message:
-        description: "Commit message"
-        required: false
-        type: string
-      commit_author:
-        description: "Commit author"
-        required: false
-        type: string
-      pr_title:
-        description: "Pull request title"
-        required: false
-        type: string
-      pr_body:
-        description: "Pull request body"
-        required: false
-        type: string
-      pr_url:
-        description: "Pull request URL"
-        required: false
-        type: string
-      pr_number:
-        description: "Pull request number"
-        required: false
-        type: string
-      pr_author:
-        description: "Pull request author"
-        required: false
-        type: string
-      pr_state:
-        description: "Pull request state"
-        required: false
-        type: string
-      pr_merged:
-        description: "Pull request merged status"
-        required: false
-        type: boolean
-      issue_title:
-        description: "Issue title"
-        required: false
-        type: string
-      issue_body:
-        description: "Issue body"
-        required: false
-        type: string
-      issue_url:
-        description: "Issue URL"
-        required: false
-        type: string
-      issue_number:
-        description: "Issue number"
-        required: false
-        type: string
-      issue_author:
-        description: "Issue author"
-        required: false
-        type: string
-      issue_state:
-        description: "Issue state"
-        required: false
         type: string
 
 jobs:
@@ -94,32 +20,52 @@ jobs:
           distribution: 'microsoft'
           java-version: 21
 
-      - name: Grant execute permissions to gradlew
-        run: chmod +x gradlew
+      - name: Parse JSON Payload
+        id: json
+        run: |
+          echo "REPO=$(echo '${{ inputs.payload }}' | jq -r .repo_name)" >> $GITHUB_ENV
+          echo "BRANCH=$(echo '${{ inputs.payload }}' | jq -r .branch_name)" >> $GITHUB_ENV
+          echo "EVENT=$(echo '${{ inputs.payload }}' | jq -r .event_type)" >> $GITHUB_ENV
+          echo "SHA=$(echo '${{ inputs.payload }}' | jq -r .commit_sha)" >> $GITHUB_ENV
+          echo "MESSAGE=$(echo '${{ inputs.payload }}' | jq -r .commit_message)" >> $GITHUB_ENV
+          echo "ACTOR=$(echo '${{ inputs.payload }}' | jq -r .commit_author)" >> $GITHUB_ENV
+          echo "PR_TITLE=$(echo '${{ inputs.payload }}' | jq -r .pr_title)" >> $GITHUB_ENV
+          echo "PR_BODY=$(echo '${{ inputs.payload }}' | jq -r .pr_body)" >> $GITHUB_ENV
+          echo "PR_URL=$(echo '${{ inputs.payload }}' | jq -r .pr_url)" >> $GITHUB_ENV
+          echo "PR_NUMBER=$(echo '${{ inputs.payload }}' | jq -r .pr_number)" >> $GITHUB_ENV
+          echo "PR_AUTHOR=$(echo '${{ inputs.payload }}' | jq -r .pr_author)" >> $GITHUB_ENV
+          echo "PR_STATE=$(echo '${{ inputs.payload }}' | jq -r .pr_state)" >> $GITHUB_ENV
+          echo "PR_MERGED=$(echo '${{ inputs.payload }}' | jq -r .pr_merged)" >> $GITHUB_ENV
+          echo "ISSUE_TITLE=$(echo '${{ inputs.payload }}' | jq -r .issue_title)" >> $GITHUB_ENV
+          echo "ISSUE_BODY=$(echo '${{ inputs.payload }}' | jq -r .issue_body)" >> $GITHUB_ENV
+          echo "ISSUE_URL=$(echo '${{ inputs.payload }}' | jq -r .issue_url)" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=$(echo '${{ inputs.payload }}' | jq -r .issue_number)" >> $GITHUB_ENV
+          echo "ISSUE_AUTHOR=$(echo '${{ inputs.payload }}' | jq -r .issue_author)" >> $GITHUB_ENV
+          echo "ISSUE_STATE=$(echo '${{ inputs.payload }}' | jq -r .issue_state)" >> $GITHUB_ENV
 
       - name: Execute Kotlin Webhook
         env:
           DISCORD_COMMIT_WEBHOOK: ${{ secrets.DISCORD_COMMIT_WEBHOOK }}
           DISCORD_PR_WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK }}
           DISCORD_ISSUE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_WEBHOOK }}
-          GITHUB_REPOSITORY: ${{ inputs.repo_name }}
-          GITHUB_REF: ${{ inputs.branch_name }}
-          GITHUB_SHA: ${{ inputs.commit_sha }}
-          GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ inputs.commit_message }}
-          GITHUB_ACTOR: ${{ inputs.commit_author || inputs.pr_author || inputs.issue_author }}
-          GITHUB_PR_TITLE: ${{ inputs.pr_title }}
-          GITHUB_PR_BODY: ${{ inputs.pr_body }}
-          GITHUB_PR_URL: ${{ inputs.pr_url }}
-          GITHUB_PR_NUMBER: ${{ inputs.pr_number }}
-          GITHUB_PR_AUTHOR: ${{ inputs.pr_author }}
-          GITHUB_PR_STATE: ${{ inputs.pr_state }}
-          GITHUB_PR_MERGED: ${{ inputs.pr_merged }}
-          GITHUB_EVENT_TYPE: ${{ inputs.event_type }}
-          GITHUB_ISSUE_TITLE: ${{ inputs.issue_title }}
-          GITHUB_ISSUE_BODY: ${{ inputs.issue_body }}
-          GITHUB_ISSUE_URL: ${{ inputs.issue_url }}
-          GITHUB_ISSUE_NUMBER: ${{ inputs.issue_number }}
-          GITHUB_ISSUE_AUTHOR: ${{ inputs.issue_author }}
-          GITHUB_ISSUE_STATE: ${{ inputs.issue_state }}
+          GITHUB_REPOSITORY: ${{ env.REPO }}
+          GITHUB_REF: ${{ env.BRANCH }}
+          GITHUB_SHA: ${{ env.SHA }}
+          GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ env.MESSAGE }}
+          GITHUB_ACTOR: ${{ env.ACTOR }}
+          GITHUB_PR_TITLE: ${{ env.PR_TITLE }}
+          GITHUB_PR_BODY: ${{ env.PR_BODY }}
+          GITHUB_PR_URL: ${{ env.PR_URL }}
+          GITHUB_PR_NUMBER: ${{ env.PR_NUMBER }}
+          GITHUB_PR_AUTHOR: ${{ env.PR_AUTHOR }}
+          GITHUB_PR_STATE: ${{ env.PR_STATE }}
+          GITHUB_PR_MERGED: ${{ env.PR_MERGED }}
+          GITHUB_EVENT_TYPE: ${{ env.EVENT }}
+          GITHUB_ISSUE_TITLE: ${{ env.ISSUE_TITLE }}
+          GITHUB_ISSUE_BODY: ${{ env.ISSUE_BODY }}
+          GITHUB_ISSUE_URL: ${{ env.ISSUE_URL }}
+          GITHUB_ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+          GITHUB_ISSUE_AUTHOR: ${{ env.ISSUE_AUTHOR }}
+          GITHUB_ISSUE_STATE: ${{ env.ISSUE_STATE }}
 
-        run: ./gradlew run --args="-${{ inputs.event_type }}"
+        run: ./gradlew run --args="-${{ env.EVENT }}"
