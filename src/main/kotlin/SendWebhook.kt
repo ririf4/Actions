@@ -17,24 +17,24 @@ fun main(args: Array<String>) {
 
 	val repo = System.getenv("REPO") ?: "Unknown"
 	val branch = System.getenv("BRANCH") ?: "unknown-branch"
+	val message = args.getOrNull(1).toString()
 
 	when (args[0]) {
-		"commit" -> sendCommitWebhook(commitWebhook, repo, branch)
+		"commit" -> sendCommitWebhook(commitWebhook, repo, branch, message)
 		"issues" -> sendIssueWebhook(issueWebhook, repo, branch)
 		"pull-request" -> sendPullRequestWebhook(prWebhook, repo, branch)
 		else -> println("Unknown argument: ${args[0]}. Use commit, issues, or pull-request")
 	}
 }
 
-fun sendCommitWebhook(webhookUrl: String, repo: String, branch: String) {
+fun sendCommitWebhook(webhookUrl: String, repo: String, branch: String, message: String) {
 	if (webhookUrl.isEmpty()) return println("Webhook URL is empty. Skipping commit webhook.")
 	val commitSha = System.getenv("SHA") ?: "Unknown"
-	val commitMessage = System.getenv("MESSAGE") ?: "No commit message"
 	val commitAuthor = System.getenv("ACTOR") ?: "Unknown"
 	val authorUrl = "https://github.com/$commitAuthor"
 	val authorAvatar = "https://avatars.githubusercontent.com/$commitAuthor"
 
-	val commitTitle = commitMessage.lineSequence().firstOrNull() ?: "No commit message"
+	val commitTitle = message.lineSequence().firstOrNull() ?: "No commit message"
 
 	val embed = Embed(
 		title = "[${repo}:${branch}] 1 new commit",

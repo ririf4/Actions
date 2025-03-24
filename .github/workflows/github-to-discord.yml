@@ -79,7 +79,6 @@ jobs:
           BRANCH: ${{ env.BRANCH }}
           SHA: ${{ env.SHA }}
           EVENT: ${{ env.EVENT }}
-          MESSAGE: ${{ env.MESSAGE }}
           ACTOR: ${{ env.ACTOR }}
           PR_TITLE: ${{ env.PR_TITLE }}
           PR_BODY: ${{ env.PR_BODY }}
@@ -95,4 +94,4 @@ jobs:
           ISSUE_AUTHOR: ${{ env.ISSUE_AUTHOR }}
           ISSUE_STATE: ${{ env.ISSUE_STATE }}
 
-        run: ./gradlew run --args="${{ env.EVENT }}"
+        run: ./gradlew run --args="${{ env.EVENT }} ${{ env.MESSAGE }}"
