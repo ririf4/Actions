@@ -5,8 +5,9 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 fun main(args: Array<String>) {
-	if (args.isEmpty()) {
-		println("Usage: ./gradlew run --args=\"commit\" or \"issues\" or \"pull-request\"")
+	val validEvents = listOf("commit", "issues", "pull-request")
+	if (args.isEmpty() || args[0] !in validEvents) {
+		println("Invalid or missing argument. Use one of: ${validEvents.joinToString(", ")}")
 		return
 	}
 
