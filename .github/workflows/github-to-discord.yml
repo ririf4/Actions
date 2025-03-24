@@ -23,54 +23,76 @@ jobs:
       - name: Grant Execute Permission to gradlew
         run: chmod +x gradlew
 
-
       - name: Parse JSON Payload
         id: json
         run: |
           echo '${{ inputs.payload }}' | jq empty || { echo "Invalid JSON payload"; exit 1; }
-          echo "REPO=$(echo '${{ inputs.payload }}' | jq -r '.repo_name // "unknown"')" >> $GITHUB_ENV
-          echo "BRANCH=$(echo '${{ inputs.payload }}' | jq -r '.branch_name // "unknown-branch"')" >> $GITHUB_ENV
-          echo "EVENT=$(echo '${{ inputs.payload }}' | jq -r '.event_type // "unknown-event"')" >> $GITHUB_ENV
-          echo "SHA=$(echo '${{ inputs.payload }}' | jq -r '.commit_sha // "unknown"')" >> $GITHUB_ENV
-          echo "MESSAGE=$(echo '${{ inputs.payload }}' | jq -r '.commit_message // "No commit message"')" >> $GITHUB_ENV
-          echo "ACTOR=$(echo '${{ inputs.payload }}' | jq -r '.commit_author // "Unknown Author"')" >> $GITHUB_ENV
-          echo "PR_TITLE=$(echo '${{ inputs.payload }}' | jq -r '.pr_title // "Unknown PR"')" >> $GITHUB_ENV
-          echo "PR_BODY=$(echo '${{ inputs.payload }}' | jq -r '.pr_body // "No description"')" >> $GITHUB_ENV
-          echo "PR_URL=$(echo '${{ inputs.payload }}' | jq -r '.pr_url // "Unknown URL"')" >> $GITHUB_ENV
-          echo "PR_NUMBER=$(echo '${{ inputs.payload }}' | jq -r '.pr_number // "Unknown"')" >> $GITHUB_ENV
-          echo "PR_AUTHOR=$(echo '${{ inputs.payload }}' | jq -r '.pr_author // "Unknown Author"')" >> $GITHUB_ENV
-          echo "PR_STATE=$(echo '${{ inputs.payload }}' | jq -r '.pr_state // "unknown"')" >> $GITHUB_ENV
-          echo "PR_MERGED=$(echo '${{ inputs.payload }}' | jq -r '.pr_merged // "false"')" >> $GITHUB_ENV
-          echo "ISSUE_TITLE=$(echo '${{ inputs.payload }}' | jq -r '.issue_title // "Unknown Issue"')" >> $GITHUB_ENV
-          echo "ISSUE_BODY=$(echo '${{ inputs.payload }}' | jq -r '.issue_body // ""')" >> $GITHUB_ENV
-          echo "ISSUE_URL=$(echo '${{ inputs.payload }}' | jq -r '.issue_url // "Unknown URL"')" >> $GITHUB_ENV
-          echo "ISSUE_NUMBER=$(echo '${{ inputs.payload }}' | jq -r '.issue_number // "Unknown"')" >> $GITHUB_ENV
-          echo "ISSUE_AUTHOR=$(echo '${{ inputs.payload }}' | jq -r '.issue_author // "Unknown Author"')" >> $GITHUB_ENV
-          echo "ISSUE_STATE=$(echo '${{ inputs.payload }}' | jq -r '.issue_state // "unknown"')" >> $GITHUB_ENV
+          
+          export REPO=$(echo '${{ inputs.payload }}' | jq -r '.repo_name // "unknown"')
+          export BRANCH=$(echo '${{ inputs.payload }}' | jq -r '.branch_name // "unknown-branch"')
+          export EVENT=$(echo '${{ inputs.payload }}' | jq -r '.event_type // "unknown-event"')
+          export SHA=$(echo '${{ inputs.payload }}' | jq -r '.commit_sha // "unknown"')
+          export MESSAGE=$(echo '${{ inputs.payload }}' | jq -r '.commit_message // "No commit message"')
+          export ACTOR=$(echo '${{ inputs.payload }}' | jq -r '.commit_author // "Unknown Author"')
+
+          export PR_TITLE=$(echo '${{ inputs.payload }}' | jq -r '.pr_title // "Unknown PR"')
+          export PR_BODY=$(echo '${{ inputs.payload }}' | jq -r '.pr_body // "No description"')
+          export PR_URL=$(echo '${{ inputs.payload }}' | jq -r '.pr_url // "Unknown URL"')
+          export PR_NUMBER=$(echo '${{ inputs.payload }}' | jq -r '.pr_number // "Unknown"')
+          export PR_AUTHOR=$(echo '${{ inputs.payload }}' | jq -r '.pr_author // "Unknown Author"')
+          export PR_STATE=$(echo '${{ inputs.payload }}' | jq -r '.pr_state // "unknown"')
+          export PR_MERGED=$(echo '${{ inputs.payload }}' | jq -r '.pr_merged // "false"')
+
+          export ISSUE_TITLE=$(echo '${{ inputs.payload }}' | jq -r '.issue_title // "Unknown Issue"')
+          export ISSUE_BODY=$(echo '${{ inputs.payload }}' | jq -r '.issue_body // ""')
+          export ISSUE_URL=$(echo '${{ inputs.payload }}' | jq -r '.issue_url // "Unknown URL"')
+          export ISSUE_NUMBER=$(echo '${{ inputs.payload }}' | jq -r '.issue_number // "Unknown"')
+          export ISSUE_AUTHOR=$(echo '${{ inputs.payload }}' | jq -r '.issue_author // "Unknown Author"')
+          export ISSUE_STATE=$(echo '${{ inputs.payload }}' | jq -r '.issue_state // "unknown"')
+
+          echo "REPO=$REPO" >> $GITHUB_ENV
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "EVENT=$EVENT" >> $GITHUB_ENV
+          echo "SHA=$SHA" >> $GITHUB_ENV
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
+          echo "ACTOR=$ACTOR" >> $GITHUB_ENV
+          echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+          echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
+          echo "PR_URL=$PR_URL" >> $GITHUB_ENV
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "PR_AUTHOR=$PR_AUTHOR" >> $GITHUB_ENV
+          echo "PR_STATE=$PR_STATE" >> $GITHUB_ENV
+          echo "PR_MERGED=$PR_MERGED" >> $GITHUB_ENV
+          echo "ISSUE_TITLE=$ISSUE_TITLE" >> $GITHUB_ENV
+          echo "ISSUE_BODY=$ISSUE_BODY" >> $GITHUB_ENV
+          echo "ISSUE_URL=$ISSUE_URL" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "ISSUE_AUTHOR=$ISSUE_AUTHOR" >> $GITHUB_ENV
+          echo "ISSUE_STATE=$ISSUE_STATE" >> $GITHUB_ENV
 
       - name: Execute Kotlin Webhook
         env:
           DISCORD_COMMIT_WEBHOOK: ${{ secrets.DISCORD_COMMIT_WEBHOOK }}
           DISCORD_PR_WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK }}
           DISCORD_ISSUE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_WEBHOOK }}
-          GITHUB_REPOSITORY: ${{ env.REPO }}
-          GITHUB_REF: ${{ env.BRANCH }}
-          GITHUB_SHA: ${{ env.SHA }}
-          GITHUB_EVENT_HEAD_COMMIT_MESSAGE: ${{ env.MESSAGE }}
-          GITHUB_ACTOR: ${{ env.ACTOR }}
-          GITHUB_PR_TITLE: ${{ env.PR_TITLE }}
-          GITHUB_PR_BODY: ${{ env.PR_BODY }}
-          GITHUB_PR_URL: ${{ env.PR_URL }}
-          GITHUB_PR_NUMBER: ${{ env.PR_NUMBER }}
-          GITHUB_PR_AUTHOR: ${{ env.PR_AUTHOR }}
-          GITHUB_PR_STATE: ${{ env.PR_STATE }}
-          GITHUB_PR_MERGED: ${{ env.PR_MERGED }}
-          GITHUB_EVENT_TYPE: ${{ env.EVENT }}
-          GITHUB_ISSUE_TITLE: ${{ env.ISSUE_TITLE }}
-          GITHUB_ISSUE_BODY: ${{ env.ISSUE_BODY }}
-          GITHUB_ISSUE_URL: ${{ env.ISSUE_URL }}
-          GITHUB_ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
-          GITHUB_ISSUE_AUTHOR: ${{ env.ISSUE_AUTHOR }}
-          GITHUB_ISSUE_STATE: ${{ env.ISSUE_STATE }}
+          REPO: ${{ env.REPO }}
+          BRANCH: ${{ env.BRANCH }}
+          SHA: ${{ env.SHA }}
+          EVENT: ${{ env.EVENT }}
+          MESSAGE: ${{ env.MESSAGE }}
+          ACTOR: ${{ env.ACTOR }}
+          PR_TITLE: ${{ env.PR_TITLE }}
+          PR_BODY: ${{ env.PR_BODY }}
+          PR_URL: ${{ env.PR_URL }}
+          PR_NUMBER: ${{ env.PR_NUMBER }}
+          PR_AUTHOR: ${{ env.PR_AUTHOR }}
+          PR_STATE: ${{ env.PR_STATE }}
+          PR_MERGED: ${{ env.PR_MERGED }}
+          ISSUE_TITLE: ${{ env.ISSUE_TITLE }}
+          ISSUE_BODY: ${{ env.ISSUE_BODY }}
+          ISSUE_URL: ${{ env.ISSUE_URL }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+          ISSUE_AUTHOR: ${{ env.ISSUE_AUTHOR }}
+          ISSUE_STATE: ${{ env.ISSUE_STATE }}
 
         run: ./gradlew run --args="${{ env.EVENT }}"

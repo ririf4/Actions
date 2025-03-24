@@ -14,31 +14,31 @@ fun main(args: Array<String>) {
 	val issueWebhook = System.getenv("DISCORD_ISSUE_WEBHOOK")
 	val prWebhook = System.getenv("DISCORD_PR_WEBHOOK")
 
-	val repo = System.getenv("GITHUB_REPOSITORY") ?: "Unknown"
-	val branch = System.getenv("GITHUB_REF")?.split("/")?.last() ?: "unknown-branch"
+	val repo = System.getenv("REPO") ?: "Unknown"
+	val branch = System.getenv("BRANCH") ?: "unknown-branch"
 
 	when (args[0]) {
 		"commit" -> sendCommitWebhook(commitWebhook, repo, branch)
 		"issues" -> sendIssueWebhook(issueWebhook, repo, branch)
 		"pull-request" -> sendPullRequestWebhook(prWebhook, repo, branch)
-		else -> println("Unknown argument: ${args[0]}. Use -commit, -issues, or -pull-request")
+		else -> println("Unknown argument: ${args[0]}. Use commit, issues, or pull-request")
 	}
 }
 
 fun sendCommitWebhook(webhookUrl: String, repo: String, branch: String) {
 	if (webhookUrl.isEmpty()) return println("Webhook URL is empty. Skipping commit webhook.")
-	val commitSha = System.getenv("GITHUB_SHA") ?: "Unknown"
-	val commitMessage = System.getenv("GITHUB_EVENT_HEAD_COMMIT_MESSAGE") ?: "No commit message"
-	val commitAuthor = System.getenv("GITHUB_ACTOR") ?: "Unknown"
+	val commitSha = System.getenv("SHA") ?: "Unknown"
+	val commitMessage = System.getenv("MESSAGE") ?: "No commit message"
+	val commitAuthor = System.getenv("ACTOR") ?: "Unknown"
 	val authorUrl = "https://github.com/$commitAuthor"
 	val authorAvatar = "https://avatars.githubusercontent.com/$commitAuthor"
 
 	val commitTitle = commitMessage.lineSequence().firstOrNull() ?: "No commit message"
 
 	val embed = Embed(
-		title = "[${repo}:${branch}] 1 new commit ",
+		title = "[${repo}:${branch}] 1 new commit",
 		url = "https://github.com/${repo}/commit/${commitSha}",
-		description = "[`${commitSha.substring(0, 7)}`](https://github.com/${repo}/commit/${commitSha}) $commitTitle",
+		description = "[`${commitSha.take(7)}`](https://github.com/${repo}/commit/${commitSha}) $commitTitle",
 		color = 0x7289DA,
 		timestamp = Instant.now().toString(),
 		footer = Footer("GitHub Commit"),
@@ -60,17 +60,15 @@ fun sendIssueWebhook(webhookUrl: String?, repo: String, branch: String) {
 		return
 	}
 
-	val issueTitle = System.getenv("GITHUB_ISSUE_TITLE") ?: "Unknown Issue"
-	val issueBody = System.getenv("GITHUB_ISSUE_BODY").orEmpty() // nullガード
-	val issueUrl = System.getenv("GITHUB_ISSUE_URL") ?: "Unknown URL"
-	val issueNumber = System.getenv("GITHUB_ISSUE_NUMBER") ?: "Unknown"
-	val issueAuthor = System.getenv("GITHUB_ISSUE_AUTHOR") ?: "Unknown Author"
+	val issueTitle = System.getenv("ISSUE_TITLE") ?: "Unknown Issue"
+	val issueBody = System.getenv("ISSUE_BODY").orEmpty()
+	val issueUrl = System.getenv("ISSUE_URL") ?: "Unknown URL"
+	val issueNumber = System.getenv("ISSUE_NUMBER") ?: "Unknown"
+	val issueAuthor = System.getenv("ISSUE_AUTHOR") ?: "Unknown Author"
 	val authorUrl = "https://github.com/$issueAuthor"
 	val authorAvatar = "https://avatars.githubusercontent.com/$issueAuthor"
-	val issueState = System.getenv("GITHUB_ISSUE_STATE") ?: "Unknown State"
-	val eventType = System.getenv("GITHUB_EVENT_TYPE")
-		?.replaceFirstChar { it.uppercaseChar() }
-		?: "Updated"
+	val issueState = System.getenv("ISSUE_STATE") ?: "Unknown State"
+	val eventType = System.getenv("EVENT")?.replaceFirstChar { it.uppercaseChar() } ?: "Updated"
 
 	val embedColor = when (issueState) {
 		"open" -> 0x00FF00
@@ -81,11 +79,6 @@ fun sendIssueWebhook(webhookUrl: String?, repo: String, branch: String) {
 
 	val truncatedBody = if (issueBody.length > 550) issueBody.take(550) + "..." else issueBody
 
-	val imageRegex = Regex("""!\[.*?]\((https://user-images.githubusercontent.com/.*?\.(?:png|jpg|jpeg|gif|webp))\)""")
-	val imageUrls = imageRegex.findAll(issueBody).map { it.groupValues[1] }.toList()
-
-	val firstImageUrl = imageUrls.firstOrNull()
-
 	val embed = Embed(
 		title = "[${repo}:${branch}] $eventType: #$issueNumber $issueTitle",
 		url = issueUrl,
@@ -93,8 +86,7 @@ fun sendIssueWebhook(webhookUrl: String?, repo: String, branch: String) {
 		color = embedColor,
 		timestamp = Instant.now().toString(),
 		footer = Footer("GitHub Issues"),
-		author = Author(issueAuthor, authorUrl, authorAvatar),
-		image = firstImageUrl?.let { Image(it) }
+		author = Author(issueAuthor, authorUrl, authorAvatar)
 	)
 
 	val payload = WebhookPayload(
@@ -108,19 +100,19 @@ fun sendIssueWebhook(webhookUrl: String?, repo: String, branch: String) {
 
 fun sendPullRequestWebhook(webhookUrl: String, repo: String, branch: String) {
 	if (webhookUrl.isEmpty()) return println("Webhook URL is empty. Skipping PR webhook.")
-	val prTitle = System.getenv("GITHUB_PR_TITLE") ?: "Unknown PR"
-	val prBody = System.getenv("GITHUB_PR_BODY") ?: "No description"
-	val prUrl = System.getenv("GITHUB_PR_URL") ?: "Unknown URL"
-	val prNumber = System.getenv("GITHUB_PR_NUMBER") ?: "Unknown"
-	val prAuthor = System.getenv("GITHUB_PR_AUTHOR") ?: "Unknown Author"
+	val prTitle = System.getenv("PR_TITLE") ?: "Unknown PR"
+	val prBody = System.getenv("PR_BODY") ?: "No description"
+	val prUrl = System.getenv("PR_URL") ?: "Unknown URL"
+	val prNumber = System.getenv("PR_NUMBER") ?: "Unknown"
+	val prAuthor = System.getenv("PR_AUTHOR") ?: "Unknown Author"
 	val authorUrl = "https://github.com/$prAuthor"
 	val authorAvatar = "https://avatars.githubusercontent.com/$prAuthor"
-	val eventType = System.getenv("GITHUB_EVENT_TYPE")?.replaceFirstChar { it.uppercaseChar() } ?: "Updated"
+	val eventType = System.getenv("EVENT")?.replaceFirstChar { it.uppercaseChar() } ?: "Updated"
 
-	val isMerged = System.getenv("GITHUB_PR_MERGED")?.toBoolean() == true
+	val isMerged = System.getenv("PR_MERGED")?.toBoolean() == true
 	val prState = when {
 		isMerged -> "merged"
-		System.getenv("GITHUB_PR_STATE") == "closed" -> "closed"
+		System.getenv("PR_STATE") == "closed" -> "closed"
 		else -> "open"
 	}
 
@@ -186,21 +178,8 @@ data class Embed(
 	val color: Int,
 	val timestamp: String,
 	val footer: Footer,
-	val author: Author,
-	val image: Image? = null
+	val author: Author
 )
 
-data class Footer(
-	val text: String,
-	val icon_url: String? = null,
-)
-
-data class Author(
-	val name: String,
-	val url: String,
-	val icon_url: String? = null
-)
-
-data class Image(
-	val url: String
-)
+data class Footer(val text: String, val icon_url: String? = null)
+data class Author(val name: String, val url: String, val icon_url: String? = null)
