@@ -54,7 +54,6 @@ jobs:
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "EVENT=$EVENT" >> $GITHUB_ENV
           echo "SHA=$SHA" >> $GITHUB_ENV
-          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
           echo "ACTOR=$ACTOR" >> $GITHUB_ENV
           echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
           echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
@@ -94,4 +93,8 @@ jobs:
           ISSUE_AUTHOR: ${{ env.ISSUE_AUTHOR }}
           ISSUE_STATE: ${{ env.ISSUE_STATE }}
 
-        run: ./gradlew run --args="${{ env.EVENT }} ${{ env.MESSAGE }}"
+        run: |
+          EVENT=${{ env.EVENT }}
+          MESSAGE=$(echo '${{ inputs.payload }}' | jq -r '.commit_message // "No commit message"')
+
+          ./gradlew run --args="$EVENT \"$MESSAGE\""
