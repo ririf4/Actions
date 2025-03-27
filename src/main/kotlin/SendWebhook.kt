@@ -1,4 +1,4 @@
-@file:Suppress("propertyName", "DuplicatedCode")
+@file:Suppress("propertyName", "DuplicatedCode", "ReplacePrintlnWithLogging")
 
 import com.google.gson.Gson
 import java.io.File
