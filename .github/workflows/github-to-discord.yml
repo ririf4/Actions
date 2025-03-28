@@ -22,4 +22,8 @@ jobs:
           echo '${{ inputs.payload }}' > payload.json
 
       - name: Run Discord Dispatcher
+        env:
+          DISCORD_COMMIT_WEBHOOK: ${{ secrets.DISCORD_COMMIT_WEBHOOK }}
+          DISCORD_ISSUE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_WEBHOOK }}
+          DISCORD_PR_WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK }}
         run: ./gradlew run --args="payload.json"
