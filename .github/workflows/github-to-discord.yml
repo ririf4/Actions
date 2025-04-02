@@ -19,7 +19,7 @@ jobs:
 
       - name: Prepare Payload
         run: |
-          echo '${{ inputs.payload }}' > payload.json
+          printf '%s' "${{ inputs.payload }}" > payload.json
 
       - name: Run Discord Dispatcher
         env:
