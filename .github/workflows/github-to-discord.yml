@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       payload:
-        description: 'Payload JSON string'
+        description: 'Base64-encoded JSON payload'
         required: true
 
 jobs:
@@ -17,9 +17,9 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Prepare Payload
+      - name: Decode payload
         run: |
-          printf '%s' "${{ inputs.payload }}" > payload.json
+          echo "${{ inputs.payload }}" | base64 -d > payload.json
 
       - name: Run Discord Dispatcher
         env:
