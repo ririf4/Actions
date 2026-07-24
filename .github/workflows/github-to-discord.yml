@@ -4,12 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       payload:
-        description: 'Base64-encoded JSON payload'
+        description: Base64-encoded JSON payload
         required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,13 +23,21 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Decode payload
+      - name: Decode and validate payload
+        env:
+          ENCODED_PAYLOAD: ${{ inputs.payload }}
         run: |
-          echo "${{ inputs.payload }}" | base64 -d > payload.json
+          set -euo pipefail
+
+          printf '%s' "$ENCODED_PAYLOAD" | base64 --decode > payload.json
+
+          jq empty payload.json
 
       - name: Run Discord Dispatcher
         env:
           DISCORD_COMMIT_WEBHOOK: ${{ secrets.DISCORD_COMMIT_WEBHOOK }}
           DISCORD_ISSUE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_WEBHOOK }}
           DISCORD_PR_WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK }}
-        run: ./gradlew run --args="payload.json"
+        run: |
+          set -euo pipefail
+          ./gradlew run --args="payload.json"
