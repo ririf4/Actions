@@ -343,7 +343,7 @@ fun sendDiscordWebhook(
 		println("X-RateLimit-Reset-After: ${connection.getHeaderField("X-RateLimit-Reset-After")}")
 		println("X-RateLimit-Bucket: ${connection.getHeaderField("X-RateLimit-Bucket")}")
 		println("X-RateLimit-Scope: ${connection.getHeaderField("X-RateLimit-Scope")}")
-		println("X-RateLimit-Global: ${connection.getHeaderField("X-RateLimit-Global")}") a
+		println("X-RateLimit-Global: ${connection.getHeaderField("X-RateLimit-Global")}")
 
 		if (responseCode !in 200..299) {
 			val responseBody = connection.errorStream
