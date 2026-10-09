@@ -1,0 +1,58 @@
+name: Manage Maven Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: Base64-encoded Maven management JSON (dry_run defaults to true)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+# All mutations go through this repository, including jobs dispatched by other projects.
+concurrency:
+  group: swiftstorm-maven-management
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Decode payload
+        env:
+          ENCODED_PAYLOAD: ${{ inputs.payload }}
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          printf '%s' "$ENCODED_PAYLOAD" | base64 --decode > payload.json
+      - name: Validate management request
+        id: request
+        run: ./gradlew --no-daemon manageMaven --args="payload.json --validate"
+      - name: Download Maven publication
+        if: steps.request.outputs.operation != 'delete' && steps.request.outputs.source_type == 'artifact'
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.MAVEN_SOURCE_TOKEN || github.token }}
+          repository: ${{ steps.request.outputs.source_repository }}
+          run-id: ${{ steps.request.outputs.source_run_id }}
+          name: ${{ steps.request.outputs.source_artifact }}
+          path: incoming
+      - name: Manage R2 objects and Maven metadata
+        env:
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID || 'bbe33c5f51617974de46290dbeec29a2' }}
+          R2_BUCKET: swiftstorm-maven
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: ./gradlew --no-daemon manageMaven --args="payload.json incoming"

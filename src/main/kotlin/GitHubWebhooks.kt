@@ -1,89 +1,84 @@
-@file:Suppress(
-	"propertyName",
-	"DuplicatedCode",
-	"ReplacePrintlnWithLogging"
-)
+@file:Suppress("DuplicatedCode", "ReplacePrintlnWithLogging")
 
-import com.google.gson.Gson
-import java.io.File
-import java.net.HttpURLConnection
-import java.net.URI
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 
-data class Payload(
-	// Required
-	val repo_name: String,
-	val branch_name: String,
-	val event_type: String,
-
-	// Event action:
-	// opened, edited, reopened, synchronize, closed, etc.
-	val event_action: String?,
-
-	// event_type -> commit
-	val commit_sha: String?,
-	val commit_message: String?,
-	val commit_author: String?,
-
-	// event_type -> pull-request
-	val pr_title: String?,
-	val pr_body: String?,
-	val pr_number: Int?,
-	val pr_url: String?,
-	val pr_author: String?,
-	val pr_state: String?,
-	val pr_merged: Boolean?,
-
-	// event_type -> issues
-	val issue_title: String?,
-	val issue_body: String?,
-	val issue_number: Int?,
-	val issue_url: String?,
-	val issue_author: String?,
-	val issue_state: String?
-)
-
-fun main(args: Array<String>) {
-	if (args.isEmpty()) {
-		error("Missing payload file path")
+fun sendReleaseWebhook(
+	webhookUrl: String?,
+	payload: Payload
+) {
+	if (webhookUrl.isNullOrBlank()) {
+		println("Webhook URL is empty. Skipping release webhook.")
+		return
 	}
 
-	val payloadFile = File(args[0])
+	val releaseTag = payload.release_tag
+		?.takeIf { it.isNotBlank() }
+		?: "Unknown version"
 
-	if (!payloadFile.isFile) {
-		error("Payload file does not exist: ${payloadFile.absolutePath}")
+	val releaseName = payload.release_name
+		?.takeIf { it.isNotBlank() }
+		?: releaseTag
+
+	val releaseUrl = payload.release_url
+		?.takeIf { it.isNotBlank() }
+		?: "https://github.com/${payload.repo_name}/releases/tag/$releaseTag"
+
+	val releaseAuthor = payload.release_author
+		?.takeIf { it.isNotBlank() }
+		?: "Unknown Author"
+
+	val releaseType = if (payload.release_prerelease == true) {
+		"Pre-release"
+	} else {
+		"Release"
 	}
 
-	val payloadJson = payloadFile.readText()
-	val payload = Gson().fromJson(payloadJson, Payload::class.java)
+	val description = buildString {
+		append("**Tag:** [`")
+		append(releaseTag)
+		append("`](")
+		append(releaseUrl)
+		appendLine(")")
 
-	when (payload.event_type) {
-		"commit" -> {
-			sendCommitWebhook(
-				System.getenv("DISCORD_COMMIT_WEBHOOK"),
-				payload
+		val releaseBody = payload.release_body.orEmpty().trim()
+		if (releaseBody.isNotEmpty()) {
+			appendLine()
+			append(
+				truncateBody(
+					body = releaseBody,
+					fallback = "No release notes",
+					maxLength = 3_700
+				)
 			)
-		}
-
-		"issues" -> {
-			sendIssueWebhook(
-				System.getenv("DISCORD_ISSUE_WEBHOOK"),
-				payload
-			)
-		}
-
-		"pull-request" -> {
-			sendPullRequestWebhook(
-				System.getenv("DISCORD_PR_WEBHOOK"),
-				payload
-			)
-		}
-
-		else -> {
-			println("Unknown event_type: ${payload.event_type}")
 		}
 	}
+
+	val authorUrl = "https://github.com/$releaseAuthor"
+	val authorAvatar = "https://avatars.githubusercontent.com/$releaseAuthor"
+
+	val embed = Embed(
+		title = "$releaseName ${if (payload.release_prerelease == true) "pre-released" else "released"}",
+		url = releaseUrl,
+		description = description,
+		color = if (payload.release_prerelease == true) 0xD29922 else 0x3FB950,
+		timestamp = payload.release_published_at
+			?.takeIf { it.isNotBlank() }
+			?: Instant.now().toString(),
+		footer = Footer("GitHub $releaseType"),
+		author = Author(
+			name = releaseAuthor,
+			url = authorUrl,
+			icon_url = authorAvatar
+		)
+	)
+
+	val webhookPayload = WebhookPayload(
+		username = "GitHub",
+		avatar_url = GITHUB_AVATAR_URL,
+		embeds = listOf(embed)
+	)
+
+	sendDiscordWebhook(webhookUrl, webhookPayload)
 }
 
 fun sendCommitWebhook(
@@ -307,69 +302,6 @@ fun sendPullRequestWebhook(
 	sendDiscordWebhook(webhookUrl, webhookPayload)
 }
 
-fun sendDiscordWebhook(
-	webhookUrl: String,
-	payload: WebhookPayload
-) {
-	val jsonPayload = Gson().toJson(payload)
-
-	val connection = URI(webhookUrl)
-		.toURL()
-		.openConnection() as HttpURLConnection
-
-	try {
-		connection.requestMethod = "POST"
-		connection.doOutput = true
-		connection.connectTimeout = 15_000
-		connection.readTimeout = 15_000
-
-		connection.setRequestProperty(
-			"Content-Type",
-			"application/json; charset=UTF-8"
-		)
-
-		connection.outputStream.use { output ->
-			output.write(
-				jsonPayload.toByteArray(StandardCharsets.UTF_8)
-			)
-		}
-
-		val responseCode = connection.responseCode
-
-		println("HTTP $responseCode")
-		println("Retry-After: ${connection.getHeaderField("Retry-After")}")
-		println("X-RateLimit-Limit: ${connection.getHeaderField("X-RateLimit-Limit")}")
-		println("X-RateLimit-Remaining: ${connection.getHeaderField("X-RateLimit-Remaining")}")
-		println("X-RateLimit-Reset-After: ${connection.getHeaderField("X-RateLimit-Reset-After")}")
-		println("X-RateLimit-Bucket: ${connection.getHeaderField("X-RateLimit-Bucket")}")
-		println("X-RateLimit-Scope: ${connection.getHeaderField("X-RateLimit-Scope")}")
-		println("X-RateLimit-Global: ${connection.getHeaderField("X-RateLimit-Global")}")
-
-		if (responseCode !in 200..299) {
-			val responseBody = connection.errorStream
-				?.bufferedReader(StandardCharsets.UTF_8)
-				?.use { it.readText() }
-				.orEmpty()
-
-			error(
-				buildString {
-					append("Failed to send webhook: HTTP ")
-					append(responseCode)
-
-					if (responseBody.isNotBlank()) {
-						appendLine()
-						append(responseBody)
-					}
-				}
-			)
-		}
-
-		println("Webhook sent successfully!")
-	} finally {
-		connection.disconnect()
-	}
-}
-
 fun buildEventTitle(
 	repo: String,
 	branch: String,
@@ -406,34 +338,5 @@ fun formatAction(action: String): String {
 			character.uppercaseChar()
 		}
 }
-
-// > ==== For Data Structures ==== < \\
-
-data class WebhookPayload(
-	val username: String,
-	val avatar_url: String,
-	val embeds: List<Embed>
-)
-
-data class Embed(
-	val title: String,
-	val url: String? = null,
-	val description: String,
-	val color: Int,
-	val timestamp: String,
-	val footer: Footer,
-	val author: Author
-)
-
-data class Footer(
-	val text: String,
-	val icon_url: String? = null
-)
-
-data class Author(
-	val name: String,
-	val url: String,
-	val icon_url: String? = null
-)
 
 private const val GITHUB_AVATAR_URL = "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"

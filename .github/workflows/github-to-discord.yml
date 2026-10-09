@@ -38,6 +38,7 @@ jobs:
           DISCORD_COMMIT_WEBHOOK: ${{ secrets.DISCORD_COMMIT_WEBHOOK }}
           DISCORD_ISSUE_WEBHOOK: ${{ secrets.DISCORD_ISSUE_WEBHOOK }}
           DISCORD_PR_WEBHOOK: ${{ secrets.DISCORD_PR_WEBHOOK }}
+          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
         run: |
           set -euo pipefail
           ./gradlew run --args="payload.json"
