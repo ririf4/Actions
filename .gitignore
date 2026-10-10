@@ -1,5 +1,4 @@
 .gradle
 build
 .kotlin
-maven-core
 maven-gradle-plugin

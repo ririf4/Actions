@@ -19,7 +19,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    permissions: { }
+    timeout-minutes: 2
+    steps:
+      # Trusted GitHub context only: neither the payload nor checked-out code controls this gate.
+      - name: Authorize repository owner
+        env:
+          REQUEST_ACTOR_ID: ${{ github.actor_id }}
+          REQUEST_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          REQUEST_REPOSITORY: ${{ github.repository }}
+          REQUEST_EVENT: ${{ github.event_name }}
+          REQUEST_REF: ${{ github.ref }}
+          REQUEST_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          node <<'NODE'
+          const env = process.env;
+          const allowed = env.REQUEST_ACTOR_ID === '113072488'
+            && env.REQUEST_TRIGGERING_ACTOR === 'ririf4'
+            && env.REQUEST_REPOSITORY === 'ririf4/SendToDiscord'
+            && env.REQUEST_EVENT === 'workflow_dispatch'
+            && Boolean(env.REQUEST_DEFAULT_BRANCH)
+            && env.REQUEST_REF === `refs/heads/${env.REQUEST_DEFAULT_BRANCH}`;
+          if (!allowed) {
+            console.error('::error::Maven management is restricted to ririf4 on the original repository default branch.');
+            process.exit(1);
+          }
+          NODE
   manage:
+    needs: authorize
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
