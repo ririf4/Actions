@@ -38,7 +38,7 @@ jobs:
           const env = process.env;
           const allowed = env.REQUEST_ACTOR_ID === '113072488'
             && env.REQUEST_TRIGGERING_ACTOR === 'ririf4'
-            && env.REQUEST_REPOSITORY === 'ririf4/SendToDiscord'
+            && env.REQUEST_REPOSITORY === 'ririf4/Actions'
             && env.REQUEST_EVENT === 'workflow_dispatch'
             && Boolean(env.REQUEST_DEFAULT_BRANCH)
             && env.REQUEST_REF === `refs/heads/${env.REQUEST_DEFAULT_BRANCH}`;

@@ -37,7 +37,7 @@ class GitHubDispatchTest {
         }
         server.start()
         try {
-            val github = GitHubDispatch("test-token", "ririf4/SendToDiscord", "maven-repository.yml", "http://127.0.0.1:${server.address.port}")
+            val github = GitHubDispatch("test-token", "ririf4/Actions", "maven-repository.yml", "http://127.0.0.1:${server.address.port}")
             val payload = MavenPayload("delete", "releases", "dev.swiftstorm", "demo", "1.0", confirmDelete = "dev.swiftstorm:demo:1.0")
             val run = github.dispatch(payload)
             assertEquals("123", run)
@@ -47,8 +47,8 @@ class GitHubDispatchTest {
             assertEquals(payload.json(), Base64.getDecoder().decode(encodedPayload).toString(Charsets.UTF_8))
             assertEquals(
                 listOf(
-                    "/repos/ririf4/SendToDiscord", "/repos/ririf4/SendToDiscord/actions/workflows/maven-repository.yml/dispatches",
-                    "/repos/ririf4/SendToDiscord/actions/runs/123", "/repos/ririf4/SendToDiscord/actions/runs/123"
+                    "/repos/ririf4/Actions", "/repos/ririf4/Actions/actions/workflows/maven-repository.yml/dispatches",
+                    "/repos/ririf4/Actions/actions/runs/123", "/repos/ririf4/Actions/actions/runs/123"
                 ), paths
             )
         } finally {
