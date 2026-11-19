@@ -17,7 +17,7 @@ application {
 }
 
 kotlin { jvmToolchain(21) }
-tasks.test { dependsOn(":maven-core:test", ":maven-gradle-plugin:test") }
+tasks.test { dependsOn(subprojects.map { "${it.path}:test" }) }
 
 tasks.register<JavaExec>("manageMaven") {
 	classpath = sourceSets.main.get().runtimeClasspath
